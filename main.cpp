@@ -6,18 +6,20 @@
 #include <string>
 #include <cmath>
 #include <iomanip>
+#include <limits>
 
 using namespace std;
 
 double convert(string s);
 
 int main() {
-    convert("01010101");
+    cout << convert("11111111") << endl;
 }
 
 double convert(string s) {
     bool sign = (s[0] == '1'? true : false);
     bool allZero = true;
+    int allOnes = 0;
     bool expZero = true;
     bool exitLoop = false;
     double exponent = 0;
@@ -29,11 +31,10 @@ double convert(string s) {
 
     // Checking for all zeros
     for (int x = 1; x < 8 && allZero != false; x++) {
-        if (s[x] == '0') {
-            allZero = true;
-        } else {
+        if (s[x] == '1') {
             allZero = false;
-            cout << "Not all zeros" << endl;
+        } else {
+            allZero = true;
         }
     }
     
@@ -43,6 +44,7 @@ double convert(string s) {
             if (s[count] == '1') {
                 exponent += pow(2, power);
                 expZero = false;
+                allOnes++;
             }
             
             power--;
@@ -65,101 +67,92 @@ double convert(string s) {
                             jump = 4;
                             exitLoop = true;
                         }
-                        
                         break;
                     case 6:
                         if (s[x] == '1') {
                             jump = 3;
                             exitLoop = true;
                         }
-                        
                         break;
                     case 5:
                         if (s[x] == '1') {
                             jump = 2;
                             exitLoop = true;
                         }
-                        
                         break;
                     case 4:
                         if (s[x] == '1') {
                             jump = 1;
                             exitLoop = true;
                         }
-                        
                         break;
                     default:
                         break;
                 }
             }
-            
-            // convert binary to dec with hidden 1
-            // Check for zeros at the end i.e 1000 = . jumps 1 || 1100 = . jumps 2 || 1110 = . jumps 3
-            // finds jumps and minus it agains exponent i.e -2-1 = -3
-            // Find the real exponent and check against:
-            /*
-             2^-1    1/2
-             2^-2    1/4
-             2^-3    1/8
-             2^-4    1/16
-             2^-5    1/32
-             2^-6    1/64
-             */
         }
-        
-        cout << "Exponent: " << exponent << endl;
-        cout << "Jump: " << jump << endl;
-        cout << "Significand: " << significand << endl;
     }
     
-    if (!expZero) {
-        exponent -= 3;
-        significand += 16;
-        cout << "true exponent: " << exponent - jump << endl;
-    } else {
-        exponent = -2;
-        cout << "true exponent: " << exponent - jump << endl;
+    if (!allZero) { // Checks for all Zeros
+        if (allOnes == 3 && significand > 0) { //Checks if NaN
+            return nan(0);
+        } else if (!sign && allOnes && significand == 0) { // Check for Pos INF
+            return numeric_limits<double>::infinity();
+        } else if(sign && allOnes && significand == 0) { // Check for Neg Inf
+            return -numeric_limits<double>::infinity();
+        } else { // If !NaN && !Inf then convert num
+            if (!expZero) {
+                exponent -= 3;
+                significand += 16;
+            } else {
+                exponent = -2;
+            }
+            
+            switch (static_cast<int>(exponent - jump)) {
+                case -1:
+                    total = 2;
+                    break;
+                    
+                case -2:
+                    total = 4;
+                    break;
+                    
+                case -3:
+                    total = 8;
+                    break;
+                    
+                case -4:
+                    total = 16;
+                    break;
+                    
+                case -5:
+                    total = 32;
+                    break;
+                    
+                case -6:
+                    total = 64;
+                    break;
+                default:
+                    break;
+            }
+            
+            if (sign) {
+                cout << -significand << "/" << total << endl;
+            } else {
+                cout << significand << "/" << total << endl;
+            }
+            
+            total = significand/total;
+            
+        }
+    } else { // All zeros
+        if (!sign) {
+            total = 0;
+            
+        } else {
+            total = -0;
+        }
     }
     
-    cout << significand << endl;
-    
-    switch (static_cast<int>(exponent - jump)) {
-        case -1:
-            total = significand / 2;
-            cout << "Total = " << total << endl;
-            break;
-            
-        case -2:
-            total = significand / 4;
-            cout << "Total = " << total << endl;
-            break;
-            
-        case -3:
-            total = significand / 8;
-            cout << "Total = " << total << endl;
-            break;
-            
-        case -4:
-            total = significand / 16;
-            cout << "Total = " << total << endl;
-            break;
-            
-        case -5:
-            total = significand / 32;
-            cout << "Total = " << total << endl;
-            break;
-            
-        case -6:
-            total = significand / 64;
-            cout << "Total = " << total << endl;
-            break;
-        default:
-            break;
-    }
-    
-    if (!sign) {
-        cout << -0 << endl;
-    }
-    
-    return total;
+    return total = (sign ? -total : total);
 }
